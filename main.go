@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"flag"
 	"fmt"
 	"net/http"
@@ -9,7 +10,6 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
-	"crypto/tls"
 
 	"github.com/caarlos0/env"
 	"github.com/jpweber/cole/configuration"
@@ -95,19 +95,19 @@ func main() {
 	// Server Lifecycle
 	//To setup a insecure server for http without any tls validation
 	/*
-	s := &http.Server{
-		Addr:         ":8080",
-		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 10 * time.Second,
-	}
-	go func() {
-		log.Fatal(s.ListenAndServe())
-	}()
+		s := &http.Server{
+			Addr:         ":8080",
+			ReadTimeout:  5 * time.Second,
+			WriteTimeout: 10 * time.Second,
+		}
+		go func() {
+			log.Fatal(s.ListenAndServe())
+		}()
 	*/
 
 	//To setup a https secure server with certificate validation.
-        //To setup a https secure server with TLS 1.2
-         cfg := &tls.Config{
+	//To setup a https secure server with TLS 1.2
+	cfg := &tls.Config{
 		MinVersion:               tls.VersionTLS12,
 		PreferServerCipherSuites: true,
 		CipherSuites: []uint16{
@@ -118,17 +118,16 @@ func main() {
 		},
 	}
 
-
 	s := &http.Server{
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
+		TLSConfig:    cfg,
 	}
-	#err := http.ListenAndServeTLS(":443", "/usr/local/share/ca-certificates/https-server.crt", "/usr/local/share/ca-certificates/https-server.key", nil);
-	err  := s.ListenAndServeTLS("/usr/local/share/ca-certificates/https-server.crt", "/usr/local/share/ca-certificates/https-server.key");
+	err := s.ListenAndServeTLS("/usr/local/share/ca-certificates/https-server.crt", "/usr/local/share/ca-certificates/https-server.key")
 
 	if err != nil {
-	    log.Fatal(err)
-	 }
+		log.Fatal(err)
+	}
 
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
